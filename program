@@ -1,0 +1,102 @@
+#include <Wire.h>
+
+#define ADXL345 0x53
+
+// Motor pins
+#define IN1 2
+#define IN2 3
+#define IN3 4
+#define IN4 5
+
+void setup() {
+  Serial.begin(9600);
+  Wire.begin();
+
+  // Initialize ADXL345
+  Wire.beginTransmission(ADXL345);
+  Wire.write(0x2D);  // Power register
+  Wire.write(0);     // Reset
+  Wire.endTransmission();
+  delay(10);
+
+  Wire.beginTransmission(ADXL345);
+  Wire.write(0x2D);  // Power register
+  Wire.write(8);     // Measure mode
+  Wire.endTransmission();
+
+  // Motor pin setup
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+}
+
+void loop() {
+  int x = readAxis(0x32);
+  int y = readAxis(0x34);
+  int z = readAxis(0x36);
+
+  Serial.print("X: "); Serial.print(x);
+  Serial.print(" Y: "); Serial.print(y);
+  Serial.print(" Z: "); Serial.println(z);
+
+  controlRobot(x, y);
+
+  delay(200);
+}
+
+int readAxis(byte axisReg) {
+  int16_t value = Wire.read() | (Wire.read() << 8);
+  return value;
+}
+
+void controlRobot(int x, int y) {
+  int threshold = 150;
+
+  if (y > threshold) {
+    moveForward();
+  } else if (y < -threshold) {
+    moveBackward();
+  } else if (x > threshold) {
+    turnRight();
+  } else if (x < -threshold) {
+    turnLeft();
+  } else {
+    stopMotors();
+  }
+}
+
+void moveForward() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+}
+
+void moveBackward() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+}
+
+void turnLeft() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+}
+
+void turnRight() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+}
+
+void stopMotors() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+}
